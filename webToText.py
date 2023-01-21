@@ -30,11 +30,11 @@ for event_link in eventLinks:
 
     description_heading = (str(soup_event.title).replace("<title>","").replace("</title>",""))
     event_text2 = event_text1.replace(description_heading, "").strip() #only the description left. (i presume that if there is no whitespace issue then this wont change much)
-    full_event_text = description_heading, event_text2
+    full_event_text = description_heading + event_text2
 
     eventTexts.append(full_event_text)
 
 #for testing:
-# for description in eventTexts:
-#     print(description)
+for description in eventTexts:
+     print(description)
 # print(len(eventTexts))
