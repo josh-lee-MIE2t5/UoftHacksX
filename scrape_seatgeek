@@ -1,0 +1,78 @@
+import requests
+from datetime import datetime
+from bs4 import BeautifulSoup
+
+import json
+
+baseurl = 'https://seatgeek.com/'
+webpages = ['https://seatgeek.com/cities/toronto/concerts', 'https://seatgeek.com/cities/toronto/sports', 'https://seatgeek.com/cities/toronto/theater']
+
+headers = {
+    'User-Agent': 'https://developers.whatismybrowser.com/useragents/parse/?analyse-my-user-agent=yes'
+}
+
+json_events = []
+
+for i in range(0,3):
+    r = requests.get(webpages[i])
+    soup = BeautifulSoup(r.content, 'lxml')
+
+    eventLinks = []
+    tabContent = soup.find_all('li', class_="EventItem__Item-sc-fc6da3d7-5 lnSRzA EventItem-sc-fc6da3d7-17 jLhmjK")
+    for item in tabContent:
+        for link in item.find_all('a', href=True):
+            eventLinks.append(baseurl + link['href'])
+    print("Links Loaded! Starting Search...")
+    for link in eventLinks:
+        r = requests.get(link, headers = headers)
+        soup = BeautifulSoup(r.content, 'lxml')
+
+        try:
+            title = soup.find('h1', class_="Typography__Text3-sc-85d68a85-8 cJjfGt").text
+        except:
+            title = "title unavailable at the moment"
+        description = None
+        if i == 0:
+            description = "concert"
+        elif i == 1:
+            description = "sports event"
+        else:
+            description = "theatre event"
+        
+        endDate = "that day"
+        frequency = "once"
+        regRequirement = "true"
+        try:
+            time_place = soup.find('p', class_="Typography__Terms-sc-85d68a85-11 dmmyTQ").text.strip().split("·")
+        except:
+            startDate = "start time unavailable at the moment"
+        at_index = time_place[0].rfind("at")
+
+        startDate = (datetime.strptime((time_place[0][0:at_index] + time_place[0][at_index+2::]).strip(), "%a %b %d  %I:%M%p")) #takes date/time from website -> converts to proper form
+        startDate = startDate.replace(year=2023)
+
+        event = {
+            'title': title,
+            'description': description,
+            'location': time_place[1],
+            'startDate': startDate.strftime("%Y:%m:%d %H:%M:%S"),
+            'endDate': endDate,
+            "registrationReq": regRequirement,
+            "frequency": frequency
+        }
+        json_events.append(event)
+        print("Saving: ", event['title'])
+
+
+print(json.dumps(json_events))
+
+
+# format of JSON object string
+# "title": "event 2", DONE
+#    "description": "death", NONE
+#    "location": "my hall", DONE
+#    "_type": "competition", DONE
+#    "startDate": "2023-01-21", DONE
+#    "endDate": "2023-01-25", NONE
+#    "registrationReq": false, DONE
+#    "frequency": "yearly"''' + toParse, NONE
